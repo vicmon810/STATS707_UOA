@@ -1,0 +1,26 @@
+---
+title: "Assignment 2"
+author: "Shuo Mao 437681258"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# It is well known that many people try to improve their chances of winning a lottery by using lucky numbers or buying their tickets from certain lucky stores. To estimate what proportion of population would buy from a lucky store, a question was asked in a class survey. Participants were asked to respond Yes/No to the following question: “If you learned that a certain store has sold the winning lotto ticket a few times in the past year, would you be tempted to buy a ticket from this store?” In the survey, 12 out of 43 respondents said ‘Yes’. These responses are stored in an Excel file luckylotto.CSV on Canvas.
+
+
+## Task 1:
+### a. Based on this data, what will be your estimate for the proportion of people in the whole population that would consider buying their tickets this way? [5 Marks] 
+
+
+### b. Based on the key concepts of Statistical Inference that you have learned so far, Explain why this estimate can be considered to be a good estimate? [5 Marks]
+
+## Task 2:
+### a. Find the confidence intervals for your estimate at the 95% and the 99% levels and interpret each. Specify what the ‘confidence’ actually means and what it doesn’t. [6 Marks]
+
+
+### b. Explain why the 99% confidence interval is wider than the 95% one? [4 Marks]
