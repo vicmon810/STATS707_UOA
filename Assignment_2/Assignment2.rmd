@@ -8,6 +8,16 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+```{r echo=FALSE, include=FALSE}
+library(tidyverse)
+```
+
+
+```{r}
+lotto <- read.csv('/Users/vicmon/STATS707_UOA/Assignment_2/luckylotto.csv')
+tree <- read.csv('/Users/vicmon/STATS707_UOA/Assignment_2/Treesize.csv')
+THC <- read.csv('/Users/vicmon/STATS707_UOA/Assignment_2/THCdata_strain.csv')
+```
 
 
 # It is well known that many people try to improve their chances of winning a lottery by using lucky numbers or buying their tickets from certain lucky stores. To estimate what proportion of population would buy from a lucky store, a question was asked in a class survey. Participants were asked to respond Yes/No to the following question: “If you learned that a certain store has sold the winning lotto ticket a few times in the past year, would you be tempted to buy a ticket from this store?” In the survey, 12 out of 43 respondents said ‘Yes’. These responses are stored in an Excel file luckylotto.CSV on Canvas.
@@ -15,6 +25,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Task 1:
 ### a. Based on this data, what will be your estimate for the proportion of people in the whole population that would consider buying their tickets this way? [5 Marks] 
+
+```{r}
+# loading data
+
+```
 
 
 ### b. Based on the key concepts of Statistical Inference that you have learned so far, Explain why this estimate can be considered to be a good estimate? [5 Marks]
