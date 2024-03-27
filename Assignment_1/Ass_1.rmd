@@ -1,0 +1,212 @@
+---
+title: "Assignment 1"
+author: "Shuo Mao 437681258"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Question 1
+
+### Task 1: About 30% of human twins are identical and rest are fraternal. Identical twins are necessarily the same sex – half are males and half are females. One-quarter of fraternal twins are both male, one-quarter are both female and one-half are mixed: one male, one female. You have just become parent of twins and are told they are both girls. Given this information, what is the probability that they are identical?
+
+Define events: <br>
+I <- Identical twins <br>
+F <- Fraternal twins<br>
+MM <- Both twins are male <br>
+FF <- Both twins are female<br>
+MF <- one twin is male, female antoher<br>
+
+thus:` P(I|FF) = P(FF|I) × P(I) / P(FF)`<br>
+
+whereas: <br>
+    - `P(I) = 0.3(probability that twins are identical)`<br>
+    -` P(FF|I) = 0.5(identical twins are both same sex, 50% female and 50% male)` <br>
+    - `P(FF|F) = 0.25 (1/4 of fraternal twins are both female)` <br>
+To find out P(FF), we can use law of total probability:<br>
+ - `P(FF) = P(FF|I) × P(I) + P(FF|F) × P(F) `<br>
+ ```{r}
+    p_ff <- (0.5 * 0.3) + 0.25 * 0.7
+    p_ff
+ ```
+
+```{r}
+# Using Baye's Theorem: 
+ P_I_FF <-  (0.5 * 0.3)/p_ff
+
+ sprintf("The chance of identical twins both being female is %.2f%%", P_I_FF * 100)
+
+```
+
+
+### Task 2: A coin is said to be unbiased if P(heads) = P(tails) = 0.5. Probability that a newly minted coin by a Government Mint is unbiased is 0.95. When an unbiased coin is tossed 100 times, the probability of getting 62 heads or more is 0.01 (0.01048 rounded off to two decimals) for an unbiased coin. As part of a quality control process at the Mint some of the newly minted coins are randomly selected and each coin is tossed 100 times. If a coin tosses heads 62 times or more, it is set aside as a possibly biased (faulty) coin. All such coins are to be melted down and re-minted, which has additional costs. A consultant has been hired to identify efficiencies in this process and see if the criteria of 62 heads or more could possibly be further optimized. Since you work as a data scientist, the consultant asks you to calculate the probability that the coin is unbiased given that it tossed 62 or more heads out of 100 tosses. Find this probability. Assume (just for this example) that a biased coin always has a P(heads) =0.55. Clearly define your events, state the formulae you are using and show your working.
+
+Define events: <br> 
+     U : The coin is Unbiased <br> 
+     B : The coin is Biased <br> 
+     H : The filp result is Heads<br> 
+     T : the filp result is Tails<br> 
+
+Thus: <br> 
+     `P(U) = 0.95 (probability that newly minted coin is unbiased)` 
+     `$P(H|U)$ = 0.5 (probability of getting heads and coin is unbiased)` 
+     `P(H|B) = 0.55 (probability of getting heads and coin is biased)`
+     `P(H ≥ 62 | U) = 0.01048(probability of getting 62 or more heads of 100 tosses and coin is unbiased)`
+We want to find P(U|H≥ 62),the probability that the coin is unbiased given that it tossed 62 or moreheads out of 100 tossed. 
+
+Using Baye's theorem: <br> 
+     `P(U|H≥ 62) = P(H>62|U) × P(U) / P(H ≥62)`<br> 
+let firstly calcuate `P(H > 62)`: 
+     `P(H ≥ 62) = P(H > 62|U) × P(U) + P(H ≥62|B) × P(B)` <br> 
+We don't know `P(B)` yet but we can calcuate by using ` 1 - P(U) `<br> 
+
+Now, let calcuate `P(H ≥ 62|B), the probability of getting 62 or more heands out of 100 tosses given
+coin biased : `P(H ≥62|B) = $\sum_{k = 62}^{100} f(k)$ × $P(H|B)^{k}$ × $1 - P(H | B)^{100-k}$`
+
+```{r}
+p_H_geq_62_B <- sum(dbinom(62:100, size = 100, prob = 0.55))# P(H≥62|B)
+p_H_geq_62_B
+```
+
+Now we can get 62 or more than 62 head in 100 time from all coins is<br> 
+ - `P(H≥ 62) = P(H≥62∣U)×P(U)+P(H≥62∣B)×P(B)`<br>  
+We have P(U) = 0.95 and P(B) = 1 - P(U)/ P(U-), and we have the result of P(H≥62|B). 
+We need to calcuate the P(H≥62|u) × P(U)
+```{r}
+p_H_geq_62_U_times_p_U <- 0.01048 * 0.95 #P(H≥62|U) × P(U)
+p_H_geq_62_U_times_p_U
+```
+Afet We gain result of P(H≥62|U) × P(U) we can finally address to P(H≥ 62)
+```{r}
+p_H_geq_62 <- p_H_geq_62_U_times_p_U + p_H_geq_62_B #P(H≥ 62) = P(H≥62∣U)×P(U)+P(H≥62∣B)×P(B
+p_H_geq_62
+```
+Since we have P(H≥62) we can now to use Baye's theorem to calcuate P(U|H≥62)<br>
+
+- `p(U|H≥62) =(P(H≥62|U) × P(U)) / (H≥62)`<br>
+```{r}
+# Probability that the coin is unbiased given that it tossed 62 or more heads out of 100 tosses
+p_U_given_H_geq_62 <- p_H_geq_62_U_times_p_U / p_H_geq_62
+sprintf("The probability of a coin tossed 62 or more and still is unbiased is %f%s", p_U_given_H_geq_62*100, "%")
+```
+
+## Question 2
+
+### Task 1: Explain in your own words what the CLT states. Explain also, the significance of it in practice.
+
+According to the Central Limit Theorem (CLT), if we repeatedly take random samples from the population, each consisting of more than 30 observations, and compute the sample means, the distribution of those sample means will tend to follow a normal distribution as the sample size increases, regardless of the distribution of the entire population. Put another way, regardless of the population's initial distribution, the means of these random samples will form a normal distribution.
+
+This theorem is important because it enables us to draw conclusions about the total population from sample data. Even in situations when we are unsure of the population's precise distribution, we may estimate population parameters and draw statistical conclusions by examining the sample mean distribution. As a result, statistical analysis and hypothesis testing become more reliable and useful in a variety of real-world situations.
+
+
+### Task 2: Choose a non-normal probability distribution. Illustrate how CLT holds true as sample size increases by simulating repeatedly from this distribution of your choosing. Make sure to report the following.
+
+
+
+#### a:  State the exact distribution (including the exact parameter values) that you have chosen and plot its probability distribution
+```{r}
+# Generate a dataset of 1000 numbers following an exponential distribution with rate parameter 0.6
+num_samples <- 1000
+non_normal_dis <- rexp(num_samples, rate = 0.6)
+
+# Plot the density of the exponential distribution
+plot(density(non_normal_dis))
+
+
+```
+#### b: State the expected value (i.e. population mean) of this probability distribution.
+
+```{r}
+# Summary of the exponential distribution
+summary(non_normal_dis)
+
+# Standard deviation of the exponential distribution
+sd(non_normal_dis)
+
+# Histogram of the exponential distribution with 30 bins
+hist(non_normal_dis, breaks = 30)
+```
+
+#### c:  Use histogram and the summary statistic to illustrate that CLT works. Make sure that you clearly label each output so that we know exactly what you are reporting. Accompany a brief but clear explanation as to why you think that your output illustrates that the CLT works.
+
+```{r}
+#Sample Size == 50(LARGE)
+
+# Array for sample means
+sm_high <- c()
+#In next 1000 time each sample number will generate 50 sample number means
+for( i in 1:1000) {
+    sm_high <- append(sm_high, mean(sample(non_normal_dis,50)))
+    }
+#Summarlize  sm1
+sum_sm_high <-summary(sm_high)
+sum_sm_high
+#generate a histgram for sm1 
+hist(sm_high)
+#Plotting
+plot(density(sm_high))
+
+```
+
+```{r}
+#Sample Size == 4 (SMALL)
+
+# Array for sample means
+sm_low <- c()
+
+#In next 1000 times, each sample number will generate 4 sample number means
+for(i in 1:1000) {
+    # Appending each mean of non_normal_dis to sm list
+    sm_low <- append(sm_low, mean(sample(non_normal_dis, 4)))
+}
+
+# Summarize sm 
+sum_sm_low <- summary(sm_low) 
+sum_sm_low
+#generate a histgram for sm1 
+hist(sm_low)
+#Plotting
+plot(density(sm_low))
+
+
+```
+
+
+
+
+```{r}
+# Combine the summaries
+combined_summary <- rbind(sum_sm_high, sum_sm_low)
+rownames(combined_summary) <- c("Summary of sm_high", "Summary of sm_low")
+print(combined_summary)
+
+# Plotting histogram of sm1 and sm together
+hist(sm_low, col = "blue", main = "Histogram of sm1 and sm", xlab = "Sample Means", ylab = "Frequency", xlim = range(c(sm_high, sm_low)))
+hist(sm_high, col = "red", add = TRUE)
+legend("topright", legend=c("sm_low", "sm_high"), fill=c("blue", "red"))
+
+
+# Create the density plots for both samples
+sm_low_d <- density(sm_low)
+sm_high_d <- density(sm_high)
+
+# Determine the plotting range
+x_min <- min(min(sm_low_d$x), min(sm_high_d$x))
+x_max <- max(max(sm_low_d$x), max(sm_high_d$x))
+y_min <- min(min(sm_low_d$y), min(sm_high_d$y))
+y_max <- max(max(sm_low_d$y), max(sm_high_d$y))
+
+# Create a new plot with the appropriate range and margins
+plot(x = c(x_min, x_max), y = c(y_min, y_max), type = "n", 
+     main = "Large sample Vs Small sample", xlab = "Value", ylab = "Density")
+
+# Plot the density curves
+lines(sm_low_d, col = "red")
+lines(sm_high_d, col = "blue")
+
+# Add a legend
+legend("topright", legend=c("Sample Size 50", "Sample Size 4"), col=c("red", "blue"), lty=1)
+```
+
+The graphic shows that the Central Limit Theorem (CLT) curve becomes more similar to a normal distribution curve as sample size grows. On the other hand, the CLT curve diverges much further from a normal distribution curve for lower sample sizes.
