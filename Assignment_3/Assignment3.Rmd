@@ -1,0 +1,253 @@
+---
+title: "Assignment_3"
+author: "Shuo Mao 437681258"
+date: "2024-05-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(carData)
+library(car)
+library(ggplot2)
+slugs.df <- read_csv("/Users/vicmon/Downloads/slugs.csv", show_col_types = FALSE)
+```
+
+## Generate a scatterplot of the data. Ensure that you have an informative title and axis labels in your plot.
+```{r}
+
+glimpse(slugs.df)
+### Compute Corr Coeff and Perform a hypothesis test for the correlation coefficient
+with(slugs.df, cor.test(length, weight))
+### Compute the correlation coefficient
+with(slugs.df, cor(length, weight))
+
+
+with(slugs.df, plot(length, weight, xlab = "Length", pch=16,
+                 ylab = "Weight",
+                 main = "Slugs length vs weights"))
+with(slugs.df, lines(lowess(length, weight), col = "red", lwd = 2))
+
+```
+
+
+## Describe the relationship between slug lengths and weights with respect to direction and shape (you may add a LOWESS smoother to your plot to help you assess the relationship if you wish).
+
+
+
+The plot illustrates a non-linear relationship between length and weight, as indicated by the LOWESS smoother. The curve resembles an exponential growth pattern, suggesting that weight increases disproportionately with length. Notably, there are several outliers, such as the point with a length of 40 cm but a weight of 4 g, which could significantly influence the analysis. Moreover, there are clusters of outliers that appear to belong to the same group, warranting further investigation for potential patterns or anomalies.
+
+
+
+## Use the lm() function to fit a straight-line model between weight and length. Use the summary() function to generate the model output and also generate a new scatterplot and plot the straight-line relationship (you may find the abline()function helpful).
+```{r}
+slugs.lm = lm(weight ~ length, data = slugs.df)
+
+with(slugs.df, plot(length, weight, xlab = "Length", pch=16,
+                 ylab = "Weight",
+                 main = "Slugs length vs weights"))
+
+abline(slugs.lm, col = "red", lwd = 3)
+
+summary(slugs.lm)
+```
+
+## State and interpret the straight-line regression equation (in terms of the variables in the dataset) based off the summary output
+```{r}
+coefficients(slugs.lm)
+```
+## state the value of the R-squared statistic and give the correct interpretation.
+
+``` {r}
+summary(slugs.lm)$r.squared
+```
+## From the plot, does it look as though the straight-line model is an appropriate model for the data? Explain why or why not.
+```{r}
+plot(slugs.lm)
+qqPlot(slugs.lm[[2]])
+```
+-Residuals vs Fitted Plot:The plot displays a noticeable curve rather than a relatively straight line. Initially, the residuals drop and then rise, suggesting that the relationship between the independent variables (X) and the dependent variable (y) is non-linear. This indicates that a linear model may not be the best fit for the data.
+
+- Scale-Location Plot:Ideally, we expect to see a horizontal line in this plot, indicating homoscedasticity (constant variance of residuals). However, our plot does not show a horizontal line, suggesting heteroscedasticity (non-constant variance of the residuals). This violation of the assumption can affect the reliability of our regression coefficients.
+
+- Residuals vs Leverage Plot:The plot shows a line approaching the Cook's distance of 0.5, indicating that some points have a substantial influence on the regression coefficients. Points with high leverage and large residuals can unduly affect the model, signaling potential outliers or influential data points.
+
+- Q-Q Plot:The Q-Q plot reveals that some points fall outside the 95% confidence intervals, indicating deviations from normality. This departure from the normal distribution assumption can impact the validity of hypothesis tests and confidence intervals derived from the model.
+
+##  Use the lm() function to fit a quadratic model between weight and length. Use the summary() function to generate the model output and also generate a new scatterplot and plot the quadratic relationship
+
+``` {r}
+slugs.quan <- lm(weight ~ length+ I(length^2), data = slugs.df)
+summary(slugs.quan)
+
+
+plot(slugs.df$length, slugs.df$weight, xlab = "Length", ylab = "Weight", main = "Quadratic Model", pch = 16)
+lines(sort(slugs.df$length), fitted(slugs.quan)[order(slugs.df$length)], col = "red", lwd = 2)
+
+```
+
+## State and interpret the quadratic regression equation (in terms of the variables in the dataset) based off the summary output.
+```{r}
+coefficients(slugs.quan)
+```
+
+## From the plot, does it look as though the quadratic model is an appropriate model for the data? Explain why or why not
+```{r}
+plot(slugs.quan)
+qqPlot(slugs.quan[[2]])
+```
+
+- Residuals vs Fitted Plot:The residuals vs fitted plot for the quadratic model shows an almost flat line, which is what we expect to see. This indicates that the quadratic model adequately captures the underlying relationship between the independent variables (X) and the dependent variable (y), addressing the non-linearity observed in the simple linear model.
+
+- Scale-Location Plot:The scale-location plot for the quadratic model also shows an improved fit compared to the linear model. While not perfect, the variance of the residuals appears more constant, indicating a reduction in heteroscedasticity.
+
+- Residuals vs Leverage Plot:In the residuals vs leverage plot, the red line approaches the dashed line at 1, indicating that some points have a significant influence on the regression coefficients. High-leverage points with substantial residuals can unduly affect the model, signaling potential influential data points that may need further investigation.
+
+- Q-Q Plot: Despite the improvements, the Q-Q plot for the quadratic model indicates that more data points fall outside the 95% confidence intervals compared to the linear model. This suggests that the residuals may still deviate from a normal distribution, potentially impacting the model's validity for hypothesis testing and confidence interval estimation.
+
+## Use the Adjusted R-squared and residual standard error to compare the fits of the quadratic model vs the straight-line model. What can you conclude?
+
+```{r}
+summary_quan <- summary(slugs.quan)
+summary_lm <- summary(slugs.lm)
+
+summary_quan$sigma
+summary_lm$sigma
+
+summary_quan$adj.r.squared
+summary_lm$adj.r.squared
+```
+- Residual Standard Error (RSE):
+  - Quadratic Model: 0.736076
+  - Linear Model:  1.083019
+  Adjusted R-squared:
+
+- Quadratic Model: 
+  - Adjusted 𝑅^2 = 0.8904276
+
+- Linear Model: 
+  - Adjusted 𝑅^2 = 0.7627925
+  
+By comparing the Adjusted R-squared and Residual Standard Error, we can conclude that the quadratic model performs better than the linear model. The quadratic model provides a better fit to the data, as evidenced by a lower Residual Standard Error and a higher Adjusted R-squared. This suggests that incorporating a quadratic term allows the model to capture the non-linear relationship between the independent variables and the dependent variable more effectively than a simple linear model.
+
+
+## Use the lm() function to fit a straight-line model between log weight and log length. Use the summary() function to generate the model output and also generate a new scatterplot and plot the straight-line relationship
+
+```{r}
+slugs.df$log_weight <- log(slugs.df$weight)
+slugs.df$log_length <- log(slugs.df$length)
+slugs.log.lm <- lm(log_weight ~ log_length, data = slugs.df)
+summary(slugs.log.lm)
+```
+## State and interpret the regression equation (in terms of the variables in the dataset) based off the summary output. Also provide the equation in the original scale (by back transforming).
+```{r}
+coefficients(slugs.log.lm)
+```
+
+## Use the Adjusted R-squared and residual standard error to compare the fit of this model against the quadratic model and the straight-line model. What can you conclude?
+
+```{r}
+summary_quan <- summary(slugs.quan)
+summary_lm <- summary(slugs.lm)
+summary_log <- summary(slugs.log.lm)
+summary_quan$sigma
+summary_lm$sigma
+summary_log$sigma
+summary_quan$adj.r.squared
+summary_lm$adj.r.squared
+summary_log$adj.r.squared
+```
+residual standard error:
+- linear : 1.083019
+- Quadratic:0.736076
+- logged: 0.3168337
+
+RSE are changes when we using different models, which indicates that quadratic is performance better then linear and log model is performance better than quadratic. 
+
+
+Adjusted R-squared: 
+- linear : 0.7627925
+- quadratic: 0.8904276
+- log : 0.9576917
+
+Conclusion:
+- The quadratic model fits better than the linear model (lower RSE and higher Adjusted R-squared).
+- The logarithmic model outperforms both, showing the lowest RSE and highest Adjusted R-squared.
+
+## Assess the error assumptions in the regression model. Is this model appropriate in describing the relationship?
+
+
+```{r}
+plot(slugs.log.lm)
+```
+- Residuals Plot: All residual lines seem to align closer to the horizontal line at zero, compared to both linear and quadratic models. This suggests that the logarithmic model provides a better fit to the data.
+
+- Residuals vs Fitted Plot: The plot displays a consistent, flat line, indicating that the variability of the residuals remains constant across different levels of predicted values. This consistency supports the reliability of the model.
+
+- Scale-Location Plot: Similar to the residuals vs fitted plot, this plot also exhibits a flat trend, indicating homoscedasticity. The consistent spread of residuals across the range of predicted values further reinforces the model's stability.
+
+- Residuals vs Leverage Plot: The residuals do not seem to approach Cook's distance of 0.5, suggesting that there are no individual data points exerting a significant influence on the overall model. This indicates a balanced distribution of leverage across the dataset.
+## Interpret the p-values for the coefficients, and the p-value for the regression
+
+```{r}
+summary_log$coefficients
+```
+
+## Use the predict() function with the argument interval =“confidence” to estimate the weight of a slug with length = 10, and interpret the 95% confidence interval. (Hint: predictions of weight will be given in log form,so use the exp() function to transform back into actual units)
+
+``` {r}
+newdata <- data.frame(log_length = seq(min(slugs.df$log_weight), max(slugs.df$log_length), length.out = 100)) 
+
+predictions_ci <- predict(slugs.log.lm, newdata = newdata, interval = "confidence", level = 0.95)
+
+```
+
+
+## Repeat (f) but use the argument interval = “predict” instead. Interpret the 95% prediction interval
+```{r}
+predictions_pi <-predict(slugs.log.lm, newdata = newdata, interval = "prediction", level = 0.95)
+```
+
+## To the scatterplot of data overlayed with the regression line, plot both the confidence interval and the prediction interval in the log scale. Produce another plot in the original scale by back-transforming everything. So, produce two plots in total.
+```{r}
+# Combine CIs and PIs with newdata  
+newdata_ci <- data.frame(x = newdata$log_length, ymin = predictions_ci[, "lwr"], ymax = predictions_ci[, "upr"])  
+newdata_pi <- data.frame(x = newdata$log_length, ymin_pi = predictions_pi[, "lwr"], ymax_pi = predictions_pi[, "upr"])  
+
+# Generate fitted values for log scale
+newdata$log_fit <- predict(slugs.log.lm, newdata, type = "response")
+
+# Plot original data points and fitted values
+
+plot(slugs.df$log_length, slugs.df$log_weight, xlab = "Log Length", ylab = "Log Weight", pch = 16,
+     main = "Log-Log Relationship Between Length and Weight of Slugs")
+abline(slugs.log.lm, col = "blue", lwd = 2)
+lines(newdata$log_length, predictions_ci[, "lwr"], col = "green", lwd = 2, lty = 2)
+lines(newdata$log_length, predictions_ci[, "upr"], col = "green", lwd = 2, lty = 2)
+lines(newdata$log_length, predictions_pi[, "lwr"], col = "red", lwd = 2, lty = 3)
+lines(newdata$log_length, predictions_pi[, "upr"], col = "red", lwd = 2, lty = 3)
+
+legend("topleft", legend = c("Regression Line", "Confidence Interval", "Prediction Interval"),
+       col = c("blue", "green", "red"), lty = c(1, 2, 3), lwd = 2)
+# Back-transforming for original scale plot
+newdata$length <- exp(newdata$log_length)
+newdata$fit <- exp(predict(slugs.log.lm, newdata, type = "response"))
+newdata$ci_lwr <- exp(predictions_ci[, "lwr"])
+newdata$ci_upr <- exp(predictions_ci[, "upr"])
+newdata$pi_lwr <- exp(predictions_pi[, "lwr"])
+newdata$pi_upr <- exp(predictions_pi[, "upr"])
+
+plot(slugs.df$length, slugs.df$weight, xlab = "Length", ylab = "Weight", pch = 16,
+     main = "Relationship Between Length and Weight of Slugs")
+lines(newdata$length, newdata$fit, col = "blue", lwd = 2)
+lines(newdata$length, newdata$ci_lwr, col = "green", lwd = 2, lty = 2)
+lines(newdata$length, newdata$ci_upr, col = "green", lwd = 2, lty = 2)
+lines(newdata$length, newdata$pi_lwr, col = "red", lwd = 2, lty = 3)
+lines(newdata$length, newdata$pi_upr, col = "red", lwd = 2, lty = 3)
+
+legend("topleft", legend = c("Regression Line", "Confidence Interval", "Prediction Interval"),
+       col = c("blue", "green", "red"), lty = c(1, 2, 3), lwd = 2)
+
+```
+

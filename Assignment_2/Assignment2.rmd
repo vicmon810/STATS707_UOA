@@ -10,14 +10,14 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 ```{r echo=FALSE, include=FALSE}
 library(tidyverse)
-```
-
-
-```{r}
+library(ggplot2)
+library(patchwork)
+library(car)
 lotto <- read.csv('/Users/vicmon/STATS707_UOA/Assignment_2/luckylotto.csv')
 tree <- read.csv('/Users/vicmon/STATS707_UOA/Assignment_2/Treesize.csv')
 THC <- read.csv('/Users/vicmon/STATS707_UOA/Assignment_2/THCdata_strain.csv')
 ```
+
 
 
 # It is well known that many people try to improve their chances of winning a lottery by using lucky numbers or buying their tickets from certain lucky stores. To estimate what proportion of population would buy from a lucky store, a question was asked in a class survey. Participants were asked to respond Yes/No to the following question: “If you learned that a certain store has sold the winning lotto ticket a few times in the past year, would you be tempted to buy a ticket from this store?” In the survey, 12 out of 43 respondents said ‘Yes’. These responses are stored in an Excel file luckylotto.CSV on Canvas.
@@ -26,16 +26,280 @@ THC <- read.csv('/Users/vicmon/STATS707_UOA/Assignment_2/THCdata_strain.csv')
 ## Task 1:
 ### a. Based on this data, what will be your estimate for the proportion of people in the whole population that would consider buying their tickets this way? [5 Marks] 
 
+To estimate the proportion of people will go to their lucky store we can using :
+  - Estimate Proportion = Number of 'yes' responses / Total number of responses
+to calculate the percentage of people buy tickets at their lucky store.
+
 ```{r}
 # loading data
-
+estimate_proportion <- sum(lotto$response_code) / nrow(lotto)
+estimate_proportion
 ```
 
+As the result above we can tell there is approximately  27.9% population will consider buying a ticket from a lucky store
 
 ### b. Based on the key concepts of Statistical Inference that you have learned so far, Explain why this estimate can be considered to be a good estimate? [5 Marks]
 
+The estimate of 27.9% of people will consider buying lottery from a lucky store is making sense in statistical inference concepts, making it a reasonable approximation for the broader population. This is estimation is supported by: <br>
+1. Sample Representation: Assuming the sample is randomly selected, it reflects the population's characteristics, allowing for generalization with a degree of confidence. this reduces bias and ensure the sample's to the population<br>
+2. Central Limit Theorem(CLT): Give the sample size is 43, the CLT suggests the distribution of sample estimates will approximate a normal distribution if the sample is sufficiently large(normally sample size greater than 25 will consider as a good sample size). this theorem supports the reliability of our proportion estimates as indicative of the population parameter.<br>
+3. Confidence intervals: By calculating the confidence intervals around the estimate, we can understand the ranger within which the true population proportion likely falls, offering insight into the estimate's precision and the uncertainty inherent in sampling.
+
 ## Task 2:
 ### a. Find the confidence intervals for your estimate at the 95% and the 99% levels and interpret each. Specify what the ‘confidence’ actually means and what it doesn’t. [6 Marks]
+```{r}
+# For 95% confidence interval
+t95 <- t.test(lotto$response_code,conf.level = 0.95)
+t95$conf.int
+# For 99% confidence interval
+t99 <- t.test(lotto$response_code,conf.level = 0.99)
+t99$conf.int
 
+```
+In the 95% of confidence interval the range is between 0.1393953 to 0.4187443. In the 99% of confidence interval the range is between0.09233251 to 0.46580702
+
+The term 'confidence' we use in here is refer the probability that a population parameter will fall between a set of values for a certain proportion times, we use this to  term to explain how likely the true population mean value will contains in our interval. For example 95% confidence interval, means if taking many samples from the population and construct a confidence interval from each sample, should expecting around 95% of those intervals to contain the true population means. What it does not means is the chance that any given interval specifically includes the true population. 
 
 ### b. Explain why the 99% confidence interval is wider than the 95% one? [4 Marks]
+
+The different in width if due to the critical values used in the interval calculation. For 99% confidence interval, a larger critical values are used compared to a 95% confidence interval, reflecting the need to cover more of the normal distribution curve to capture the true parameter with greater confidence. Essentially, as we want more assurance (from 95% to 99% confidence), we must accept a larger range, recognizing greater uncertainty in the particular parameter value. This trade-off between confidence level and interval width is crucial in statistics, since it balances accuracy with certainty.
+
+
+
+
+## Task 3:
+### It is of interest to see if the proportion of people in the population who would consider buying their ticket from a lucky store is 0.5, or if it is less than that. Use a t-test to answer this question.
+### a. Clearly define the null and alternative hypotheses that are most appropriate for this question. [4 Marks]
+
+As it define the proportion of people consider buying their ticket from a lucky store is 0.5 hence it can be representing by :
+ `H0: P(lucky) = 0.5`
+ where p is the proportion of people consider buying ticket from a lucky store.<br>
+ 
+
+On another hand, the Alternative Hypothesis(H1) can be representing as following formal: 
+ `H1 : P(lucky) < 0.5`
+ 
+### b. Perform the t-test and paste your output in your report. [2 Marks]
+```{r}
+t_test <- t.test(lotto$response_code, mu=0.5, alternative='less')
+print(t_test)
+```
+
+### c. Interpret the findings of the test. [ 4 Marks]
+
+Given p-value of 0.001337 is less than typical significance level of 0.05, therefore there is strong evidence to reject the null hypothesis. This suggests that true true proportion of the population consider buying ticket from a lucky store is less than 50%. The confidence interval supports this conclusion, as it indicates with 95% confidence that the upper limit of the true population is below 0.5.
+
+
+# Question 2: [25 Marks]
+## For this question, we will use the data in the Excel worksheet Treesize.CSV. A copy of this can be found on Canvas. This data was collected in the US state of Georgia to test if the tree species growth is superior in a warmer climate compared to a cooler one. The data comes from two regions – north and south. The northern region is elevated and hence hosts a much cooler climate compared to the southern region. 30 pine trees were randomly selected from each region. Sizes were determined by measuring the diameter at breast height (DBH) for each tree in the sample. The data contains the following variables:
+
+| Variable | Description                                | Type    |
+|----------|--------------------------------------------|---------|
+| North    | DBH for trees in the northern region       | Numeric |
+| South    | DBH for trees in the southern region       | Numeric |
+
+
+## Task 1:
+### a. Produce a descriptive summary of the two groups of data. Paste your output. [2 Marks]
+```{r}
+summary(tree)
+```
+### b. Use box plots and histograms to examine the two groups of data graphically. Paste your output. [4 Marks]
+```{r}
+
+# boxplot for north
+p1 <- ggplot(tree, aes(x=factor(0), y=North)) +
+  geom_boxplot() +
+  labs(x="", y="DBH") +
+  ggtitle(" DBH in the Northern Region") +
+  theme_minimal()
+# boxplot for south
+p2 <- ggplot(tree, aes(x=factor(0), y=South)) +
+  geom_boxplot() +
+  labs(x="", y="DBH") +
+  ggtitle(" DBH in the Southern Region") +
+  theme_minimal()
+# hisgram for north
+p3 <- ggplot(tree, aes(x=North)) +
+  geom_histogram(binwidth=1, fill="blue", alpha=0.5) +
+  ggtitle("Histogram of DBH in the Northern Region") +
+  theme_minimal()
+# hisgram for south
+p4 <- ggplot(tree, aes(x=South)) +
+  geom_histogram(binwidth=1, fill="red", alpha=0.5) +
+  ggtitle("Histogram of DBH in the Southern Region") +
+  theme_minimal()
+
+# Arrange the plots into a 2x2 grid
+p1 + p2 + p3 + p4 + 
+  plot_layout(ncol = 2)
+```
+
+### c. Based on the descriptive summary and the plots, describe the patterns in the data. [4 Marks]
+
+The graphs shows that the distribution of tree populations in the northern and southern areas varied dramatically. Notably, trees in the north have a lower mean diameter at breast height (DBH) than those in the south. Furthermore, both regions had similar maximum and minimum DBH values, indicating a comparable range of tree sizes despite the disparity in average sizes.
+
+
+## Task 2:
+### What are the appropriate null and alternative hypotheses for comparing the two groups of data? Justify your choice. [5 Marks]
+
+A good null and alternative hypotheses could be there is no difference in mean DBH between tree in northern and southern regions :<br>
+- H0 : ($\mu North$ = $\mu South$)
+
+hence the alternative hypotheses could be :<br>
+- H1:( $\mu North$ >  $\mu South$)
+
+## Task 3:
+### a. Explain which t-test will be appropriate for this data and why? [4 Marks]
+
+Paired t-test will be appropriate for this data, despite coming from same general population(tree in Georgia), each pair of data samples reflects different and independent observations. This test takes into consideration the data's paired nature, allowing for direct comparisons of relate samples.
+
+### b. Perform this t-test to test the hypotheses you described in Task 2. Paste your output. [2 Marks]
+
+```{r}
+t_test <-t.test(tree$North,  tree$South, paired = TRUE,alternative="less", conf.level = 0.99)
+
+print(t_test)
+```
+
+### c. What do you conclude at 1% level? Report your finding in the context of the question posed. [4 Marks]
+
+Based on the calculation above, p-value of 0.007964, which is less then 0.01 that indicating statistical significance at the 99% confidence level. this finding leads to the rejection of null hypothesis since the p-value is within the threshold 1% range of severe outcomes. This shows that the observed data strongly from what would be implied under the null hypothesis, providing strong evidence for the alternative hypothesis.
+
+
+# Question 3: [15 Marks]
+## Beta-Blockers are a class of medications that block the effects of adrenaline on the heart, leading to a decrease in heart rate, thus lowering the blood pressure. An existing Beta- Blocker drug (Drug A) based on the molecule metoprolol is expected to reduce the diastolic blood pressure by 5mm Hg. A drug-maker has developed a new medication (Drug B) that is expected to be more effective and reduce the diastolic blood pressure by 6.5mm Hg. A clinical trial will need to be conducted to establish if Drug B is indeed more effective than Drug A. The FDA (Food and Drug Administration, USA) will only accept the findings if the level of significance is 0.05 (5%) and the power of the test is at least 0.8 (80%). You work as a statistician on this clinical trial. Based on past studies, you think that the s.d will range from between 3 and 10. Use the power.t.test command in R to determine the sample size needed to ensure at least 80% power at 5% level of significance for any s.d. within the given range.Paste your command and output. Clearly justify your choice of the sample size.[15 Marks]
+
+```{r}
+
+#Difference in effect
+delta <- 6.5 - 5
+
+# Range of standard deviations
+sd_range <- seq(3, 10, by=1)
+
+# Initialize a vector to store sample sizes
+sample_sizes <- numeric(length(sd_range))
+
+# Calculate sample sizes for each standard deviation in the range
+for(i in 1:length(sd_range)) {
+  result <- power.t.test(delta=delta, sd=sd_range[i], sig.level=0.05, power=0.8, type="two.sample", alternative="one.sided")
+  sample_sizes[i] <- ceiling(result$n)
+}
+
+# Combine the standard deviations with their corresponding sample sizes
+sample_size_data <- data.frame(Standard_Deviation = sd_range, Sample_Size = sample_sizes)
+print(sample_size_data)
+
+```
+
+Choosing the sample size corresponding to a s.d of 10(551 participants per group) would ensure the trial is sufficiently powered even in the worst case scenario of maximum variability. This choice maximizes the likelihood of detecting a true difference between the drugs if it exists. 
+
+
+# Question 4: [25 Marks]
+## THC (tetrahydrocannabinol) is the active ingredient in a cannabis plant. Legal cannabis products in the United States are required to report THC potency (total THC% by dry weight) on packaging. However, THC potency can change based on the strain of cannabis being used in a particular product. The three main strains used are sativa, indica and hybrid. To investigate if the average THC potency changed based on the dominant strain used in a product, 86 samples of products available in the state of Colorado were tested for their THC potency. This data is stored in the THCdata_strain.csv on Canvas. Use an appropriate hypothesis testing model studied in class to test if the mean THC content is the same for all three strains or, if not, which strain(s) are different.
+
+## Task 1:
+### Which hypothesis testing model is the most appropriate here? And why? [5 Marks]
+
+Given that we are comparing three unique population in this sample test, so the ANOVA are considering as a suitable hypothesis testing approach for this circumstance. ANOVA is useful for determining whether the average THC potency, indicated by the mean THC tested across multiple groups, varies significantly among these populations.
+
+## Task 2:
+### Write your null and alternative hypotheses for the model you selected in Task 1. Clearly write what these mean in terms of the study question. [5 Marks]
+
+Null Hypothesis(H0): the mean THC potency is same across all three strains(sativa, indica, hybrid) <br>
+ H0 : $\mu Sativa$ = $\mu Indica$ = $\mu Hybrid$
+        
+whereas the alternative hypotheses can be consider as one of following :<br>
+ H1 : $\mu Sativa$ != $\mu Indica$ != $\mu Hybrid$  or<br>
+ H1 : $\mu Sativa$ != $\mu Indica$ = $\mu Hybrid$ or<br>
+ H1 : $\mu Sativa$ = $\mu Indica$ != $\mu Hybrid$
+  
+  
+## Task 3:
+### Implement this hypothesis testing using R. Paste your code and outputs (including plots,if any). Are the assumptions for this model met? Explain why (or why not)! [10 Marks]
+
+```{r}
+# box plot for each type
+bpo <- boxplot(THC.measured~Strain.Type,THC)
+```
+Analysis the box plot discovers the indica mean is more approach to the upper quanta and it the box plot of indica is larger then rest, which means the variance of indica will bigger than others. 
+
+```{r}
+aggregate(THC.measured ~ Strain.Type, data = THC, FUN = length)
+```
+In the quantity of strain types that indica is less then hybrid and sativa which mean there is a large amount chance we need to reject our hypotheses.
+```{r}
+aggregate(THC.measured ~ Strain.Type, data = THC, FUN = sd)
+```
+In the s.d the indica is almost 2 time large then hybrid and sativa which also indicate our null hypotheses might be rejected. 
+
+```{r}
+aggregate(THC.measured ~ Strain.Type, data = THC, FUN = mean)
+```
+In the mean, the indica is large than Hybrid and Sativa,  Hybrid and Sativa is more close compare to indica.
+```{r}
+qqPlot(THC.measured~Strain.Type,THC)
+```
+In the qqPlot that indica and sativa seems fine, and hybrid have a few point that is outside of the range.
+
+```{r}
+anova = aov(THC.measured~Strain.Type,THC) 
+par(mfrow=c(2,2))
+plot(anova)
+summary(anova)
+```
+```{r}
+qqPlot(residuals(anova))
+```
+
+As the qqPlot show above all points are normally distribute in the range which indicates the hypotheses might be correct, in order to make a final decision we need transform our data so the mean value of each group are getting more equal also make it more symmetric and closely aligned with a normal distribution then do another ANOVA test to find out. 
+
+```{r}
+# using square root for data transf
+backup <- THC
+#backup$THC.measured <- log(log(backup$THC.measured)) 
+backup$THC.measured <- sqrt(sqrt(backup$THC.measured)) 
+aggregate(THC.measured ~ Strain.Type, data = backup, FUN = sd)
+```
+After transformation of data set the, from observing that s.d are closer across group, means a reduction in variability difference hence improve the accuracy and reliability.
+```{r}
+qqPlot(THC.measured~Strain.Type,backup)
+
+
+# running anova using sqrt data figure
+anova1 = aov(THC.measured~Strain.Type,backup)
+summary(anova1)
+```
+
+```{r}
+qqPlot(residuals(anova1))
+```
+After transformation data using square root the p-value is 0.0705 > 0.05, which indicates that there is no strong divergence to prove that average THC potency changed based on the dominant strain used in a product. hence we will not reject H0.
+
+
+## Task 4:
+### Conclude (in statistical terms) what your results indicate. Also, explain this in a non- technical manner that is easily understood by a person not educated in statisticalmethods. [5 Marks]
+
+```{r}
+TukeyHSD(anova)
+TukeyHSD(anova1)
+```
+In the first anova(before transform data), there is significant difference between Indica with Strain, in addition Indica with Hybrid and Hybrid with Sativa have no significant difference, however in the second anova(after transform data) the difference become smaller which shows no statistically significant differences between any pairs of strain at the 5% level.
+
+
+
+```{r}
+summary(anova1)
+```
+
+In anova1, p-value of 0.00705 which is bigger than the 0.05, it proves that the observed differences between group averages are not statistically significant at the 5% level. This p-value indicates that any observed differences are likely due to random fluctuation which the the normal distribution of outcomes, rather than systematic difference between groups. Therefore, in this case null hypothesis are accepted due to no sufficient evidence. this leads to conclusion that, based on the data at the 5% level of significance, there is no sufficient evidence to imply difference in means between the groups being compared, and the null hypothesis, which assumes equality of group mean are accepted. 
+
+
+
+
+
+
+
+
+
