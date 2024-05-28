@@ -9,14 +9,22 @@ output: html_document
 lakewater <- read.csv("lakewater.csv")
 library(ggplot2)
 library(GGally)
+library(car)
 ```
 ### Q1 Create a scatterplot-matrix for the variables (i.e. a 7 x 7 grid of scatterplots for each pair of variables). Add LOWESS lines to the plots with the argument panel = panel.smooth (you can change the aesthetics of the plot, if you wish).Which predictor variables seem to be related to ln.TP? Do any of the predictor variables seem to be related to each other? Are all the relationships linear? Just mention the strongest relationships you can see
 
 ```{r}
-plot(lakewater, panel = panel.smooth, lwd = 2)
+pairs(lakewater, panel = panel.smooth, lwd = 2)
 ```
-
-
+- Strongest Relationships with ln.TP:
+  - ln.Chla appears to have a strong positive relationship with ln.TP.
+  - ln.SecDep shows a strong negative relationship with ln.TP
+  
+- Relationships Among Predictor Variables:
+  - ln.Chla and ln.SecDep have a strong negative relationship.
+  - ln.SecDep and ln.Stab have a moderate positive relationship.
+  - ln.Chla and ln.Stab have a moderate negative relationship
+  
 
 ### Q2 Calculate the correlation matrix for the variables (you may wish to round the values to 3 decimal places). Describe the relationships you see just using the correlation matrix? Do these confirm the relations between variables you saw in the scatterplot-matrix?
 ```{r}
@@ -28,13 +36,31 @@ round(cor(lakewater), 3)
 - ln.Chla and ln.SecDep have a strong negative correlation (-0.824), suggesting that higher phytoplankton biomass is associated with lower water clarity.
 - ln.Chla and ln.Stab have a moderate negative correlation (-0.402), indicating that higher phytoplankton biomass is associated with lower water-column stability.
 
+
+- The strong positive correlation between ln.TP and ln.Chla (0.723) confirms the relationship observed in the scatterplot matrix, where higher total phosphorus is associated with higher Chlorophyll-A levels.
+- The strong negative correlation between ln.TP and ln.SecDep (-0.715) aligns with the scatterplot matrix observation that higher total phosphorus correlates with lower water clarity.
+- The moderate positive correlation between ln.SecDep and ln.Stab (0.349) supports the visual trend seen in the scatterplot matrix, indicating some degree of association between water clarity and water-column stability.
+The strong negative correlation between ln.Chla and ln.SecDep (-0.824) confirms the scatterplot matrix finding that higher phytoplankton biomass is linked to lower water clarity.
+- The moderate negative correlation between ln.Chla and ln.Stab (-0.402) is consistent with the scatterplot matrix, suggesting that higher phytoplankton biomass is associated with lower water-column stability.
+
+Overall, the relationships observed in the correlation matrix confirm the trends seen in the scatterplot matrix. Most relationships are not strictly linear, as indicated by the moderate correlations and the added LOWESS lines in the scatterplot matrix, which capture the non-linear trends.
+
 ### Q3 Perform step-wise regression using the AIC decision criterion to find the “best” model to fit the data. Identify the best model. Which variables does this model include?
 
 ```{r}
 lakewater.lm = lm(ln.TP ~ ., data = lakewater)
+summary(lakewater.lm)
 ## Stepwise regression using AIC
 lakewater.step.aic.lm = step(lakewater.lm, direction = "both", trace = TRUE)
+summary(lakewater.step.aic.lm)
 ```
+The step-wise regression using the AIC decision criterion has selected the best model to predict ln.TP. This model includes the following predictor variables:
+ - SDI
+ - ln.Chla
+ - ln.SecDep
+ - ln.Cond
+ 
+ The final model: ln.TP∼SDI+ln.Chla+ln.SecDep+ln.Cond
 
 
 ### Q4 Perform step-wise regression using the BIC decision criterion to find the “best” model to fit the data. Identify the best model. Which variables does this modelinclude?
@@ -42,8 +68,13 @@ lakewater.step.aic.lm = step(lakewater.lm, direction = "both", trace = TRUE)
 ```{r}
 ## Stepwise regression using BIC
 lakewater.step.bic.lm = step(lakewater.lm, direction = "both", trace = TRUE, k = log(nrow(lakewater)))
-
+summary(lakewater.step.bic.lm)
 ```
+The step-wise regression using the BIC decision criterion has selected the best model to predict ln.TP. This model includes the following predictor variables:
+ - ln.Chla
+ - ln.SecDep
+
+Final model : ln.TP ~ ln.Chla + ln.SecDep
 
 ### Q5 Use the function myallpossregs.func(), found in Model Selection R file on Canvas, to find the best subsets of regression variables of each size. Only choose one model for each size. Paste the output to your report.
 
@@ -78,19 +109,41 @@ myallpossregs.func=function(model,n) {
   as.data.frame(result.mat)
 }
 
-models=myallpossregs.func(lakewater.lm,1) #Selecting nbest = 1 
-models
+#models=myallpossregs.func(lakewater.lm,1) #Selecting nbest = 1 
+#models
+
+#iterate all sizes
+best_models_list <- list()
+for (n in 1:6) {
+  best_models_list[[n]] <- myallpossregs.func(lakewater.lm, n)
+}
+
+# Combining results into one data frame for easy comparison
+all_best_models <- do.call(rbind, best_models_list)
+all_best_models
 
 ```
 ### Q6 Plot Cp against p for the candidate models, along with the line Cp = p. (Note: p is the number of parameters = number of predictor variables + 1 for the intercept)
 
 
-
 ```{r}
-plot(models$Vars + 1, 
-    models$Cp, 
-     pch = 16, ylab = "Cp", xlab = "p", cex = 2)
-abline(0, 1)
+# Combine results from Q5 into a single data frame if not already done
+best_models_list <- list()
+for (n in 1:6) {
+  best_models_list[[n]] <- myallpossregs.func(lakewater.lm, 1)
+}
+all_best_models <- do.call(rbind, best_models_list)
+
+# Plot Cp against p (number of parameters)
+plot(all_best_models$Vars + 1,  # Adding 1 to the number of variables for the intercept
+     all_best_models$Cp, 
+     pch = 16, 
+     ylab = "Cp", 
+     xlab = "p", 
+     cex = 2, 
+     main = "Cp vs. Number of Parameters")
+abline(0, 1, col = "red")  # Adding the line Cp = p
+
 ```
 
 
@@ -107,26 +160,54 @@ abline(0, 1)
   
 ```{r}
 # Find 'best' model with respect to single criteria
-which.max(models$"Rsq(adj)")
-which.min(models$PRESS)
-which.min(models$AIC)
-which.min(models$BIC)
-which.min(models$Cp)
-which.min(models$s)  
+which.max(all_best_models$"Rsq(adj)")
+which.min(all_best_models$PRESS)
+which.min(all_best_models$AIC)
+which.min(all_best_models$BIC)
+which.min(all_best_models$Cp)
+which.min(all_best_models$s)  
 ```
-- Adj R2 
+- Adj R2 : 
+  - criterion: Adjusted R-squared measures the proportion of variance explained by the model while adjusting for the number of predictors. High Adj R2 means model have better performance. 
+  - Best Model: The model with the highest adjusted R-squared value is considered the best.
+  - Result: The index 4 indicates that the best model according to adjusted R-squared is the one with 4 predictor variables
 - PRESS 
-- AIC 
-- BIC
-- Cp
-- S. 
+  - criterion:PRESS measures the predictive power of the model by assessing the sum of squares of the prediction errors. A lower value indicates a better predictive model.
+  - Best Model:The model with the lowest PRESS value is considered the best.
+  - Result : The index 4 indicates that the best model according to PRESS is the one with 4 predictor variables.
+- AIC :
+  - criterion : AIC balances model fit and complexity by penalizing the number of parameters. Lower AIC values indicate better models.
+  - Best Model:The model with the lowest AIC value is considered the best.
+  - Result: The index 4 indicates that the best model according to AIC is the one with 4 predictor variables. 
+- BIC : 
+  - criterion: BIC is similar to AIC but penalizes additional parameters more strongly. Lower BIC values indicate better models 
+  - Best Model:The model with the lowest BIC value is considered the best.
+  - Result: The index 2 indicates that the best model according to BIC is the one with 2 predictor variables.
+- Cp: 
+  - criterion: Cp estimates the prediction error of the model and assesses the balance between bias and variance. Lower Cp values indicate better models.
+  _ Best Model: The model with the lowest Cp value is considered the best.
+  - Result: The index 4 indicates that the best model according to Cp is the one with 4 predictor variables.
+- S. : 
+  - criterion:Residual standard error measures the average deviation of the observed values from the fitted values. Lower values indicate better model fit.
+  - Best Model: The model with the lowest residual standard error is considered the best.
+  - Result:The index 4 indicates that the best model according to residual standard error is the one with 4 predictor variables.
 ### Q8 Do any (some) of the best models identified in Q7 match either of the models you identified by step-wise regression in Qs 3&4?
 From Q7 above, it returns me the best mdoel, as we can see that in Ajd R2, PRESS, AIC, Cp, and S all considering var 4 as best performance model, whereas BIC consider 2 variable have the best performance. However it do match with Q3's best performance model, in Q3 the best model have 4 variables (SDI + ln.Chla + ln.SecDep + ln.Cond). But in BIC didn't math with Q4.
 
+### Q8 Do any (some) of the best models identified in Q7 match either of the models you identified by step-wise regression in Qs 3&4?
+
+Yes, in the best models identified in Q7, each different models identifier selected model matched with either Q3 or Q4. 
+
+- Adj R2 matched with Q3
+- PRESS matched with Q3
+- AIC matched with Q3
+- BIC matched with Q4
+- Cp matched with Q3
+- S matched with Q3.
 
 ### Q9 So based on all the analysis so far (Qs 3, 4, 7 & 8), which model would you choose as the ‘best’ model? Why?
 
-From the analysis Qs 3,4,7,8, I would pick model with 4 variable as my model, because in it have the best performance. 
+The regression models were thoroughly analyzed using several assessment criteria, including Adjusted R-squared (Adj R^2), Predicted Residual Sum of Squares (PRESS), Akaike Information Criterion (AIC), Mallows' Cp, and residual standard error (S). The model ln.TP ~ SDI + ln.Chla + ln. SecDep + ln.Conde appears as the best option.
 
 
 
@@ -135,12 +216,27 @@ From the analysis Qs 3,4,7,8, I would pick model with 4 variable as my model, be
 ```{r}
 q9 <- lm(ln.TP ~ SDI+ ln.Chla+ ln.SecDep+ln.Cond, data = lakewater)
 summary(q9)
+shapiro.test(residuals(q9))
+qqPlot(q9[[2]])
+
+par(mfrow=c(2,2))			 # to get the plots as 2x2 grid
+plot(q9)
 ```
+
+The W-statistic, which approaches 1, typically suggests normality in the data. However, the small p-value of 3.299e-05, indicating significance, leads us to reject the null hypothesis of normality. Consequently, we conclude that the data does not adhere to a normal distribution. This assertion is further supported by visual inspection via QQ plots, which demonstrate departures from normality.
+
+Moreover, examination of residual plots — including residuals vs fitted, scale-location, and residuals vs leverage — reveals consistent flat lines, indicative of a well-fitted model.
 
 
 ### Q11 What would you conclude looking at the t-tests and the F-test for this ‘best’ model? Why?
+
+```{r, echo=FALSE}
+summary(q9)
+```
   
-the t-test aiming for comparison between each variable with 0, in this model that all variables of p value are smaller than 0.05 which means all of variables are  important, f-test are aiming to compare current model with null model, which in this case f-test' p value are way smaller than 0.05 which also indicate that current model have significantly improvement then null model.
+The t-tests for individual coefficients assess the significance of each predictor variable in explaining the variation in the response variable. In this 'best' model, all predictor variables exhibit p-values smaller than 0.05, indicating statistical significance. Therefore, we can infer that all variables - SDI, ln.Chla, ln.SecDep, and ln.Cond - are important in predicting ln.TP levels.
+
+Furthermore, the F-test compares the 'best' model with a null model (typically a model with only an intercept) to determine if the added predictors contribute significantly to explaining the variability in the response variable. In this case, the F-test yields a p-value much smaller than 0.05, suggesting that the 'best' model provides a significantly better fit to the data compared to the null model.
 
 
 ### Q12 Use the function cooks.distance() to return the Cook’s Distance values for the observations, and plot() these with type = "h". Identify the observation with the largest Cook’s Distance. Explain the difference between having high leverage and having high influence
@@ -148,13 +244,14 @@ the t-test aiming for comparison between each variable with 0, in this model tha
 ```{R}
 cooks_d <- cooks.distance(q9)
 plot(cooks_d, type = "h", main = "Cook's Distance for each Observation", ylab = "Cook's Distance")
-influential_obs <- which.max(cooks_d)
-influential_obs
+which.max(cooks_d)
+
 ```
 In the Cook's Distance for each observation it indicates there is a high influence on lakewater data on column 61. 
 
-The term of leverage refers to data points with extreme prediction values, a high leverage value maybe impact model performance but not always have high influence.
+Leverage is the degree to which an observation's predictor values deviate from the mean of the predictor variables. Observations with high leverage have extreme predictor values, which may have a disproportionate effect on the regression model's coefficients. However, large leverage does not guarantee a meaningful influence on the model's predictions.
 
-The term of influence refer to data points could affect prediction values, a high influence value means it have significat impact on model perofrmance.
+In contrast, influence refers to how an observation affects the model's parameters and predictions. High-influence observations have the potential to drastically affect the model's coefficients and anticipated values. Cook's Distance quantifies the change in model coefficients when an observation is added or removed from the model. Observations having a high Cook's Distance are thought to have a significant effect on the model.
+
 
   
